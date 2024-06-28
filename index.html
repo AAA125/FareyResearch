@@ -26,7 +26,7 @@
         float translateX = 0;
         float translateY = 0;
         float centerX, centerY;
-        int fareyLevel = 6;
+        PGraphics pg;
 
         void setup() {
             size(window.innerWidth, window.innerHeight);
@@ -34,6 +34,17 @@
             centerY = height / 2;
             r = min(width, height) * 0.4;
             frameRate(60);
+
+            // Create the PGraphics object
+            pg = createGraphics(width, height);
+
+            // Draw the Farey diagrams on the PGraphics object
+            pg.beginDraw();
+            pg.background(255);
+            for(int k = 0; k<10; k++){
+                FareyPoints(k, pg);
+            }
+            pg.endDraw();
         }
 
         void draw() {
@@ -43,12 +54,8 @@
             scale(zoom);
             translate(-width/2, -height/2);
             
-            // Draw the main circle
-            noFill();
-            stroke(0);
-            ellipse(centerX, centerY, r * 2, r * 2);
-            
-            FareyPoints(fareyLevel);
+            // Display the PGraphics object
+            image(pg, 0, 0);
             
             popMatrix();
         }
@@ -70,16 +77,16 @@
             translateY += mouseY - pmouseY;
         }
 
-        void FareyPoints(int n) {
+        void FareyPoints(int n, PGraphics pg) {
             ArrayList<Float> P = Farey(n);
             
             // Draw the points on the circle
             for (int i = 0; i < P.size(); i++) {
                 float x = centerX + r*cos(P.get(i));
                 float y = centerY - r*sin(P.get(i));
-                fill(#17E6FF, 127);
-                noStroke();
-                ellipse(x, y, 10, 10);
+                pg.fill(#17E6FF, 127);
+                pg.noStroke();
+                pg.ellipse(x, y, 10, 10);
             }
             
             // Calculate and draw intersections and new circles
@@ -92,9 +99,9 @@
                 
                 if (!Float.isNaN(intersection[0]) && !Float.isNaN(intersection[1])) {
                     // Draw intersection point
-                    fill(255, 0, 0);
-                    noStroke();
-                    ellipse(intersection[0], intersection[1], 10, 10);
+                    pg.fill(255, 0, 0);
+                    pg.noStroke();
+                    pg.ellipse(intersection[0], intersection[1], 10, 10);
                     
                     // Calculate distance to one of the original Farey circle points
                     float x1 = centerX + r * cos(angle1);
@@ -102,10 +109,10 @@
                     float distance = dist(intersection[0], intersection[1], x1, y1);
                     
                     // Draw new circle
-                    noFill();
-                    stroke(0, 255, 0);
-                    strokeWeight(2);
-                    ellipse(intersection[0], intersection[1], distance * 2, distance * 2);
+                    pg.noFill();
+                    pg.stroke(0, 255, 0);
+                    pg.strokeWeight(2);
+                    pg.ellipse(intersection[0], intersection[1], distance * 2, distance * 2);
                 }
             }
         }
@@ -161,3 +168,4 @@
     </script>
 </body>
 </html>
+
