@@ -73,90 +73,37 @@
         }
 
         void FloatPoints(int n) {
-            ArrayList<Float> P = Farey(n);
+            float[] P = Farey(n);
 
             // Draw the points on the circle
-            for (int i = 0; i < P.size(); i++) {
-                float x = centerX + r * cos(P.get(i));
-                float y = centerY - r * sin(P.get(i));
+            for (int i = 0; i < P.length; i++) {
+                float x = centerX + r * cos(P[i]);
+                float y = centerY - r * sin(P[i]);
                 fill(#17E6FF, 127);
                 noStroke();
                 ellipse(x, y, 10, 10);
             }
-
-            // Calculate and draw intersections and new circles
-            for (int i = 0; i < P.size(); i++) {
-                int nextIndex = (i + 1) % P.size();
-                float angle1 = P.get(i);
-                float angle2 = P.get(nextIndex);
-
-                float[] intersection = calculateIntersection(angle1, angle2);
-
-                if (!Float.isNaN(intersection[0]) && !Float.isNaN(intersection[1])) {
-                    // Draw intersection point
-                    fill(255, 0, 0);
-                    noStroke();
-                    ellipse(intersection[0], intersection[1], 10, 10);
-
-                    // Calculate distance to one of the original Farey circle points
-                    float x1 = centerX + r * cos(angle1);
-                    float y1 = centerY - r * sin(angle1);
-                    float distance = dist(intersection[0], intersection[1], x1, y1);
-
-                    // Draw new circle
-                    noFill();
-                    stroke(0, 255, 0);
-                    strokeWeight(2);
-                    ellipse(intersection[0], intersection[1], distance * 2, distance * 2);
-                }
-            }
         }
 
-        float[] calculateIntersection(float angle1, float angle2) {
-            // Calculate points on the circle
-            float x1 = centerX + r * cos(angle1);
-            float y1 = centerY - r * sin(angle1);
-            float x2 = centerX + r * cos(angle2);
-            float y2 = centerY - r * sin(angle2);
-
-            // Calculate tangent slopes
-            float m1 = cos(angle1) / sin(angle1);
-            float m2 = cos(angle2) / sin(angle2);
-
-            // Handle vertical tangents
-            if (abs(sin(angle1)) < 1e-6 || abs(sin(angle2)) < 1e-6) {
-                float x, y;
-                if (abs(sin(angle1)) < 1e-6) {
-                    x = x1;
-                    y = m2 * (x - x2) + y2;
-                } else {
-                    x = x2;
-                    y = m1 * (x - x1) + y1;
-                }
-                return new float[] { x, y };
-            }
-
-            // Calculate intersection
-            float x = (y2 - y1 + m1 * x1 - m2 * x2) / (m1 - m2);
-            float y = m1 * (x - x1) + y1;
-
-            return new float[] { x, y };
-        }
-
-        ArrayList<Float> Farey(int n) {
-            ArrayList<Float> equi = new ArrayList<Float>();
+        float[] Farey(int n) {
+            float[] equi;
             if (n == 0) {
-                for (int i = 0; i < 4; i++) {
-                    equi.add(i * PI / 2);
-                }
+                equi = new float[4];
+                equi[0] = 0;
+                equi[1] = PI / 2;
+                equi[2] = PI;
+                equi[3] = 3 * PI / 2;
             } else {
-                ArrayList<Float> prevFarey = Farey(n - 1);
-                for (int j = 0; j < prevFarey.size() - 1; j++) {
-                    equi.add(prevFarey.get(j));
-                    equi.add((prevFarey.get(j) + prevFarey.get(j + 1)) / 2);
+                float[] prevFarey = Farey(n - 1);
+                equi = new float[prevFarey.length * 2];
+                for (int j = 0; j < prevFarey.length; j++) {
+                    equi[2 * j] = prevFarey[j];
+                    if (j < prevFarey.length - 1) {
+                        equi[2 * j + 1] = (prevFarey[j] + prevFarey[j + 1]) / 2;
+                    } else {
+                        equi[2 * j + 1] = (prevFarey[j] + 2 * PI) / 2;
+                    }
                 }
-                equi.add(prevFarey.get(prevFarey.size() - 1));
-                equi.add((prevFarey.get(prevFarey.size() - 1) + 2 * PI) / 2);
             }
             return equi;
         }
