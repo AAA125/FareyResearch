@@ -56,7 +56,7 @@
         }
 
         void mouseWheel(MouseEvent event) {
-            float e = event.getAmount();
+            float e = event.getCount();
             float newZoom = zoom * (1 - e * 0.05);
             if (newZoom > 0.1 && newZoom < 10) {
                 float mouseXScaled = (mouseX - translateX) / zoom;
