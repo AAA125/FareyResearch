@@ -1,0 +1,157 @@
+int r = 200;
+float zoom = 1.0;
+float translateX = 0;
+float translateY = 0;
+
+void setup() {
+  size(600, 600);
+  background(255);
+}
+
+void draw() {
+  background(255);
+  pushMatrix();
+  translate(translateX, translateY);
+  scale(zoom);
+  
+  // Draw the main circle
+  noFill();
+  stroke(0);
+  circle(300, 300, r * 2);
+  
+  for(int k = 0; k<10; k++){
+    FareyPoints(k);
+    
+  }// Or whatever level you want to draw
+  
+  popMatrix();
+}
+
+void mouseWheel(MouseEvent event) {
+  float e = event.getCount();
+  zoom *= (e > 0) ? 0.95 : 1.05;
+  
+  // Adjust translate to zoom towards mouse position
+  translateX -= (mouseX - translateX) * (1 - 1/zoom);
+  translateY -= (mouseY - translateY) * (1 - 1/zoom);
+}
+
+void mouseDragged() {
+  translateX += mouseX - pmouseX;
+  translateY += mouseY - pmouseY;
+}
+float[] equiangles(int n){
+  float a;
+  float[] angles = new float[int(4*pow(2,n))];
+  for (int i = 0; i<4*pow(2,n) ; i++){
+    a = 2*i*PI/(4*pow(2,n));
+    angles[i] = a;
+    print(angles[i] + " ");
+  }
+  return angles;
+}
+void points(int n){
+  float A[] = equiangles(n);
+  color c = color(23, 230, 255); // the color is cyan
+  for (int i = 0; i<A.length; i++) {
+    stroke(c);
+    strokeWeight(10);//ye how thick my points are, probably in the future, i'd rather have the points get bigger? idk 
+    point(300 + r*cos(A[i]),300-r*sin(A[i]));
+  }
+  
+}
+// in the future i'd love to have a slider that changes the value of n here, btw n here means the number of iteration, so the 0th iteration would have the four points 
+ArrayList<Float> Farey (int n){
+  ArrayList<Float> equi = new ArrayList<Float>();
+  if (n == 0){
+    for (int i = 0; i < 4; i++){
+      equi.add(equiangles(n)[i]);
+    }
+  } else {
+    ArrayList<Float> prevFarey = Farey(n-1);
+    for (int j = 0; j < prevFarey.size() - 1; j++){
+      equi.add(prevFarey.get(j));
+      equi.add((prevFarey.get(j) + prevFarey.get(j+1)) / 2);
+    }
+    equi.add(prevFarey.get(prevFarey.size()-1 ));
+    equi.add((prevFarey.get((prevFarey.size()-1))+ 2*PI)/2);
+  }
+  return equi; 
+
+}
+void FareyPoints(int n) {
+  ArrayList<Float> P = Farey(n);
+  
+  println("Number of points: " + P.size());
+  
+  // Draw the points on the circle
+  for (int i = 0; i < P.size(); i++) {
+    float x = 300 + r*cos(P.get(i));
+    float y = 300 - r*sin(P.get(i));
+    fill(255,255,255, 127);
+    noStroke();
+    circle(x, y, 10);
+    println("Circle point " + i + ": (" + x + ", " + y + ")");
+  }
+  
+  // Calculate and draw intersections and new circles
+  for (int i = 0; i < P.size(); i++) {
+    int nextIndex = (i + 1) % P.size();
+    float angle1 = P.get(i);
+    float angle2 = P.get(nextIndex);
+    
+    float[] intersection = calculateIntersection(angle1, angle2);
+    
+    if (!Float.isNaN(intersection[0]) && !Float.isNaN(intersection[1])) {
+      // Draw intersection point
+      fill(255, 0, 0); // Set fill color to red
+      noStroke();
+      circle(intersection[0], intersection[1], 1);
+      println("Drew intersection " + i + " at (" + intersection[0] + ", " + intersection[1] + ")");
+      
+      // Calculate distance to one of the original Farey circle points
+      float x1 = 300 + r * cos(angle1);
+      float y1 = 300 - r * sin(angle1);
+      float distance = dist(intersection[0], intersection[1], x1, y1);
+      
+      // Draw new circle
+      noFill();
+      stroke(#74FAE2); // Green color for the new circle
+      strokeWeight(2);
+      circle(intersection[0], intersection[1], distance * 2); // Diameter is twice the radius
+      println("Drew new circle at (" + intersection[0] + ", " + intersection[1] + ") with radius " + distance);
+    } else {
+      println("Skipped drawing intersection " + i + " due to invalid values");
+    }
+  }
+}
+float[] calculateIntersection(float angle1, float angle2) {
+  // Calculate points on the circle
+  float x1 = 300 + r * cos(angle1);
+  float y1 = 300 - r * sin(angle1);
+  float x2 = 300 + r * cos(angle2);
+  float y2 = 300 - r * sin(angle2);
+  
+  // Calculate tangent slopes
+  float m1 = cos(angle1) / sin(angle1);
+  float m2 = cos(angle2) / sin(angle2);
+  
+  // Handle vertical tangents
+  if (abs(sin(angle1)) < 1e-6 || abs(sin(angle2)) < 1e-6) {
+    float x, y;
+    if (abs(sin(angle1)) < 1e-6) {
+      x = x1;
+      y = m2 * (x - x2) + y2;
+    } else {
+      x = x2;
+      y = m1 * (x - x1) + y1;
+    }
+    return new float[] {x, y};
+  }
+  
+  // Calculate intersection
+  float x = (y2 - y1 + m1*x1 - m2*x2) / (m1 - m2);
+  float y = m1 * (x - x1) + y1;
+  
+  return new float[] {x, y};
+}
