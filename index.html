@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farey Diagram</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.6.6/processing.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="script.js"></script>
     <style>
         body, html {
             margin: 0;
@@ -16,156 +17,30 @@
         canvas {
             display: block;
         }
+        #title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+        #author {
+            font-size: 18px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        #date {
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
+    <div id="title">Farey Diagram</div>
+    <div id="author">Author: Anass Boufrioua</div>
+    <div id="date">Date: 29/06/2024</div>
+    <label for="iterations">Number of iterations:</label>
+    <input type="range" id="iterations" name="iterations" min="0" max="20" value="20">
     <canvas id="myCanvas"></canvas>
-    <script type="text/processing" data-processing-target="myCanvas">
-        float r;
-        float zoom = 1.0;
-        float translateX = 0;
-        float translateY = 0;
-        float centerX, centerY;
-        PGraphics pg;
-
-        void setup() {
-            size(window.innerWidth, window.innerHeight);
-            centerX = width / 2;
-            centerY = height / 2;
-            r = min(width, height) * 0.4;
-            frameRate(60);
-
-            // Create the PGraphics object
-            pg = createGraphics(width, height);
-
-            // Draw the Farey diagrams on the PGraphics object
-            pg.beginDraw();
-            pg.background(255);
-            for(int k = 0; k<10; k++){
-                FareyPoints(k, pg);
-            }
-            pg.endDraw();
-        }
-
-        void draw() {
-            background(255);
-            pushMatrix();
-            translate(translateX + width/2, translateY + height/2);
-            scale(zoom);
-            translate(-width/2, -height/2);
-            
-            // Display the PGraphics object
-            image(pg, 0, 0);
-            
-            popMatrix();
-        }
-
-        void mouseWheel(MouseEvent event) {
-            float e = event.getAmount();
-            float newZoom = zoom * (1 - e * 0.05);
-            if (newZoom > 0.1 && newZoom < 10) {
-                float mouseXScaled = (mouseX - translateX) / zoom;
-                float mouseYScaled = (mouseY - translateY) / zoom;
-                zoom = newZoom;
-                translateX -= mouseXScaled * (zoom - newZoom);
-                translateY -= mouseYScaled * (zoom - newZoom);
-            }
-        }
-
-        void mouseDragged() {
-            translateX += mouseX - pmouseX;
-            translateY += mouseY - pmouseY;
-        }
-
-        void FareyPoints(int n, PGraphics pg) {
-            ArrayList<Float> P = Farey(n);
-            
-            // Draw the points on the circle
-            for (int i = 0; i < P.size(); i++) {
-                float x = centerX + r*cos(P.get(i));
-                float y = centerY - r*sin(P.get(i));
-                pg.fill(#17E6FF, 127);
-                pg.noStroke();
-                pg.ellipse(x, y, 10, 10);
-            }
-            
-            // Calculate and draw intersections and new circles
-            for (int i = 0; i < P.size(); i++) {
-                int nextIndex = (i + 1) % P.size();
-                float angle1 = P.get(i);
-                float angle2 = P.get(nextIndex);
-                
-                float[] intersection = calculateIntersection(angle1, angle2);
-                
-                if (!Float.isNaN(intersection[0]) && !Float.isNaN(intersection[1])) {
-                    // Draw intersection point
-                    pg.fill(255, 0, 0);
-                    pg.noStroke();
-                    pg.ellipse(intersection[0], intersection[1], 10, 10);
-                    
-                    // Calculate distance to one of the original Farey circle points
-                    float x1 = centerX + r * cos(angle1);
-                    float y1 = centerY - r * sin(angle1);
-                    float distance = dist(intersection[0], intersection[1], x1, y1);
-                    
-                    // Draw new circle
-                    pg.noFill();
-                    pg.stroke(0, 255, 0);
-                    pg.strokeWeight(2);
-                    pg.ellipse(intersection[0], intersection[1], distance * 2, distance * 2);
-                }
-            }
-        }
-
-        float[] calculateIntersection(float angle1, float angle2) {
-            // Calculate points on the circle
-            float x1 = centerX + r * cos(angle1);
-            float y1 = centerY - r * sin(angle1);
-            float x2 = centerX + r * cos(angle2);
-            float y2 = centerY - r * sin(angle2);
-            
-            // Calculate tangent slopes
-            float m1 = cos(angle1) / sin(angle1);
-            float m2 = cos(angle2) / sin(angle2);
-            
-            // Handle vertical tangents
-            if (abs(sin(angle1)) < 1e-6 || abs(sin(angle2)) < 1e-6) {
-                float x, y;
-                if (abs(sin(angle1)) < 1e-6) {
-                    x = x1;
-                    y = m2 * (x - x2) + y2;
-                } else {
-                    x = x2;
-                    y = m1 * (x - x1) + y1;
-                }
-                return new float[] {x, y};
-            }
-            
-            // Calculate intersection
-            float x = (y2 - y1 + m1*x1 - m2*x2) / (m1 - m2);
-            float y = m1 * (x - x1) + y1;
-            
-            return new float[] {x, y};
-        }
-
-        ArrayList<Float> Farey(int n) {
-            ArrayList<Float> equi = new ArrayList<Float>();
-            if (n == 0) {
-                for (int i = 0; i < 4; i++) {
-                    equi.add(i * PI/2);
-                }
-            } else {
-                ArrayList<Float> prevFarey = Farey(n-1);
-                for (int j = 0; j < prevFarey.size() - 1; j++) {
-                    equi.add(prevFarey.get(j));
-                    equi.add((prevFarey.get(j) + prevFarey.get(j+1)) / 2);
-                }
-                equi.add(prevFarey.get(prevFarey.size()-1));
-                equi.add((prevFarey.get(prevFarey.size()-1) + 2*PI) / 2);
-            }
-            return equi;
-        }
-    </script>
 </body>
 </html>
-
