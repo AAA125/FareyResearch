@@ -26,7 +26,6 @@
         float translateX = 0;
         float translateY = 0;
         float centerX, centerY;
-        int fareyLevel = 6;
 
         void setup() {
             size(window.innerWidth, window.innerHeight);
@@ -39,18 +38,20 @@
         void draw() {
             background(255);
             pushMatrix();
-            translate(translateX + width/2, translateY + height/2);
+            translate(translateX + width / 2, translateY + height / 2);
             scale(zoom);
-            translate(-width/2, -height/2);
-            
+            translate(-width / 2, -height / 2);
+
             // Draw the main circle
             noFill();
             stroke(0);
             ellipse(centerX, centerY, r * 2, r * 2);
-            for(int k = 0; k<10; k++){
-                FareyPoints(k);
-    
-              }
+
+            // Call FloatPoints for k from 0 to 9
+            for (int k = 0; k < 10; k++) {
+                FloatPoints(k);
+            }
+
             popMatrix();
         }
 
@@ -71,37 +72,37 @@
             translateY += mouseY - pmouseY;
         }
 
-        void FareyPoints(int n) {
+        void FloatPoints(int n) {
             ArrayList<Float> P = Farey(n);
-            
+
             // Draw the points on the circle
             for (int i = 0; i < P.size(); i++) {
-                float x = centerX + r*cos(P.get(i));
-                float y = centerY - r*sin(P.get(i));
+                float x = centerX + r * cos(P.get(i));
+                float y = centerY - r * sin(P.get(i));
                 fill(#17E6FF, 127);
                 noStroke();
                 ellipse(x, y, 10, 10);
             }
-            
+
             // Calculate and draw intersections and new circles
             for (int i = 0; i < P.size(); i++) {
                 int nextIndex = (i + 1) % P.size();
                 float angle1 = P.get(i);
                 float angle2 = P.get(nextIndex);
-                
+
                 float[] intersection = calculateIntersection(angle1, angle2);
-                
+
                 if (!Float.isNaN(intersection[0]) && !Float.isNaN(intersection[1])) {
                     // Draw intersection point
                     fill(255, 0, 0);
                     noStroke();
                     ellipse(intersection[0], intersection[1], 10, 10);
-                    
+
                     // Calculate distance to one of the original Farey circle points
                     float x1 = centerX + r * cos(angle1);
                     float y1 = centerY - r * sin(angle1);
                     float distance = dist(intersection[0], intersection[1], x1, y1);
-                    
+
                     // Draw new circle
                     noFill();
                     stroke(0, 255, 0);
@@ -117,11 +118,11 @@
             float y1 = centerY - r * sin(angle1);
             float x2 = centerX + r * cos(angle2);
             float y2 = centerY - r * sin(angle2);
-            
+
             // Calculate tangent slopes
             float m1 = cos(angle1) / sin(angle1);
             float m2 = cos(angle2) / sin(angle2);
-            
+
             // Handle vertical tangents
             if (abs(sin(angle1)) < 1e-6 || abs(sin(angle2)) < 1e-6) {
                 float x, y;
@@ -132,34 +133,33 @@
                     x = x2;
                     y = m1 * (x - x1) + y1;
                 }
-                return new float[] {x, y};
+                return new float[] { x, y };
             }
-            
+
             // Calculate intersection
-            float x = (y2 - y1 + m1*x1 - m2*x2) / (m1 - m2);
+            float x = (y2 - y1 + m1 * x1 - m2 * x2) / (m1 - m2);
             float y = m1 * (x - x1) + y1;
-            
-            return new float[] {x, y};
+
+            return new float[] { x, y };
         }
 
         ArrayList<Float> Farey(int n) {
             ArrayList<Float> equi = new ArrayList<Float>();
             if (n == 0) {
                 for (int i = 0; i < 4; i++) {
-                    equi.add(i * PI/2);
+                    equi.add(i * PI / 2);
                 }
             } else {
-                ArrayList<Float> prevFarey = Farey(n-1);
+                ArrayList<Float> prevFarey = Farey(n - 1);
                 for (int j = 0; j < prevFarey.size() - 1; j++) {
                     equi.add(prevFarey.get(j));
-                    equi.add((prevFarey.get(j) + prevFarey.get(j+1)) / 2);
+                    equi.add((prevFarey.get(j) + prevFarey.get(j + 1)) / 2);
                 }
-                equi.add(prevFarey.get(prevFarey.size()-1));
-                equi.add((prevFarey.get(prevFarey.size()-1) + 2*PI) / 2);
+                equi.add(prevFarey.get(prevFarey.size() - 1));
+                equi.add((prevFarey.get(prevFarey.size() - 1) + 2 * PI) / 2);
             }
             return equi;
         }
     </script>
 </body>
 </html>
-
