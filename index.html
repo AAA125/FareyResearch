@@ -47,11 +47,8 @@
             noFill();
             stroke(0);
             ellipse(centerX, centerY, r * 2, r * 2);
-            for(int k = 0; k<10; k++){
-                FareyPoints(k);
-    
-            }
             
+            FareyPoints(fareyLevel);
             popMatrix();
         }
 
@@ -163,3 +160,4 @@
     </script>
 </body>
 </html>
+
