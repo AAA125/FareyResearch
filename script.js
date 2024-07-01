@@ -5,75 +5,99 @@ let translateY = 0;
 let centerX, centerY;
 let pg;
 let slider;
+const scaleFactor = 2;//to increase or reduce
+const MIN_STROKE_WEIGHT = 0.1;
 
+// margin for website 
+const MARGIN_TOP = 50; 
+const MARGIN_BOTTOM = 20; 
+const MARGIN_LEFT = 20; 
+const MARGIN_RIGHT = 20;  
 function setup() {
-    createCanvas(windowWidth, windowHeight);
-    centerX = width / 2;
-    centerY = height / 2;
-    r = min(width, height) * 0.4;
-    frameRate(60);
-    fill(0);
-    circle(centerX,centerY,2*r);
-    // Create the p5.Graphics object
-    pg = createGraphics(width, height);
+  let canvas = createCanvas(windowWidth - MARGIN_LEFT - MARGIN_RIGHT, windowHeight - MARGIN_TOP - MARGIN_BOTTOM, SVG);
+  canvas.parent('sketch-holder'); // Assuming you have a div with id 'sketch-holder' in your HTML
+  centerX = width / 2;
+  centerY = height / 2;
+  r = min(width, height) * 0.4;
+  frameRate(60);
+  
+  // Create the p5.Graphics object with SVG
+  pg = createGraphics(width, height, SVG);
 
-    // Create the slider
-    slider = createSlider(0, 20, 10);
-    slider.position(10, 10);
-    slider.input(redrawFareyDiagram);
+  // Create the slider
+  slider = createSlider(0, 20, 10);
+  slider.position(MARGIN_LEFT, 10);
+  slider.input(redrawFareyDiagram);
 
-    // Draw the Farey diagrams on the p5.Graphics object
-    redrawFareyDiagram();
+  // Draw the Farey diagrams on the p5.Graphics object
+  redrawFareyDiagram();
 }
 
 function redrawFareyDiagram() {
-    let iterations = slider.value();
+  let iterations = slider.value();
 
-    // Clear the p5.Graphics object
-    pg.clear();
-    pg.stroke(0);
-    pg.noFill();
-    pg.ellipse(centerX, centerY, r * 2, r * 2);
-    // Draw the Farey diagram with the new number of iterations
-    
-    for(let k = 0; k < iterations; k++){
-        
-        FareyPoints(k, pg);
-    }
+  // Clear the p5.Graphics object
+  pg.clear();
+  pg.stroke(0);
+  pg.strokeWeight(max(MIN_STROKE_WEIGHT, 1 / zoom));
+  pg.noFill();
+  pg.ellipse(centerX, centerY, r * 2, r * 2);
+  
+  for(let k = 0; k < iterations; k++){
+    FareyPoints(k, pg);
+  }
 }
-
 function draw() {
-  background(255);
+  clear();
   push();
   translate(translateX + width / 2, translateY + height / 2);
   scale(zoom);
   translate(-width / 2, -height / 2);
-
+  
   // Display the p5.Graphics object
   image(pg, 0, 0);
 
   pop();
 }
 
+
 function mouseWheel(event) {
-  let e = event.delta;
-  let newZoom = zoom * (1 - e * 0.005);
-  if (newZoom > 0.1 && newZoom < 10) {
-    let mouseXScaled = (mouseX - translateX) / zoom;
-    let mouseYScaled = (mouseY - translateY) / zoom;
-    zoom = newZoom;
-    translateX -= mouseXScaled * (zoom - newZoom);
-    translateY -= mouseYScaled * (zoom - newZoom);
+  if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+      let e = event.delta;
+      let zoomFactor = 0.01;
+      let newZoom = zoom * (1 - e * zoomFactor);
+      
+      if (newZoom > 0.01 && newZoom < 1000) {
+          let mouseXScaled = (mouseX - translateX) / zoom;
+          let mouseYScaled = (mouseY - translateY) / zoom;
+          zoom = newZoom;
+          translateX -= mouseXScaled * (zoom - newZoom);
+          translateY -= mouseYScaled * (zoom - newZoom);
+          
+          redrawFareyDiagram();
+      }
+      
+      return false;
   }
+}
+function windowResized() {
+  resizeCanvas(windowWidth - MARGIN_LEFT - MARGIN_RIGHT, windowHeight - MARGIN_TOP - MARGIN_BOTTOM);
+  centerX = width / 2;
+  centerY = height / 2;
+  r = min(width, height) * 0.4;
+  redrawFareyDiagram();
 }
 
 function mouseDragged() {
-  translateX += mouseX - pmouseX;
-  translateY += mouseY - pmouseY;
+  if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+      translateX += mouseX - pmouseX;
+      translateY += mouseY - pmouseY;
+  }
 }
-
 function FareyPoints(n, pg) {
   let P = Farey(n);
+  let strokeW = max(MIN_STROKE_WEIGHT, 1 / zoom);
+  pg.strokeWeight(strokeW);
 
   // Draw the points on the circle
   for (let i = 0; i < P.length; i++) {
@@ -81,7 +105,7 @@ function FareyPoints(n, pg) {
     let y = centerY - r * sin(P[i]);
     pg.fill(255,0,0);
     pg.noStroke();
-    pg.ellipse(x, y, 5, 5);
+    pg.ellipse(x, y, max(1, 5 / zoom), max(1, 5 / zoom));
   }
 
   // Calculate and draw intersections and new circles
@@ -93,11 +117,6 @@ function FareyPoints(n, pg) {
     let intersection = calculateIntersection(angle1, angle2);
 
     if (!isNaN(intersection[0]) && !isNaN(intersection[1])) {
-      // Draw intersection point
-      //pg.fill(255, 0, 0);
-      //pg.noStroke();
-      //pg.ellipse(intersection[0], intersection[1], 10, 10);
-
       // Calculate distance to one of the original Farey circle points
       let x1 = centerX + r * cos(angle1);
       let y1 = centerY - r * sin(angle1);
@@ -106,12 +125,10 @@ function FareyPoints(n, pg) {
       // Draw new circle
       pg.noFill();
       pg.stroke(0, 0, 0);
-      pg.strokeWeight(2);
       pg.ellipse(intersection[0], intersection[1], distance * 2, distance * 2);
     }
   }
 }
-
 function calculateIntersection(angle1, angle2) {
   // Calculate points on the circle
   let x1 = centerX + r * cos(angle1);
